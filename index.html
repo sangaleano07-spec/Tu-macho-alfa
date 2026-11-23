@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#10271f">
+<meta name="description" content="Sandino Logística: gestión de entregas, clientes, gastos y caja sin conexión.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<title>Sandino Logística</title>
+<style>
+:root{--bg:#0c1713;--panel:#14251e;--panel2:#1b3027;--gold:#d6b45c;--text:#f4f2e9;--muted:#a9b8af;--line:#30463b;--red:#d77970;--green:#8ec7a1}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding-bottom:88px}
+header{padding:22px 18px 16px;background:linear-gradient(135deg,#17392b,#10231c);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:3}
+.brand{display:flex;align-items:center;gap:12px}.logo{width:48px;height:48px;border:1px solid var(--gold);border-radius:14px;display:grid;place-items:center;color:var(--gold);font-weight:900;font-size:20px}
+h1{font-size:18px;margin:0;letter-spacing:.08em}header small{color:var(--muted)}main{max-width:760px;margin:auto;padding:16px}
+nav{position:fixed;bottom:0;left:0;right:0;background:#101e18;border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:8px 4px calc(8px + env(safe-area-inset-bottom));z-index:5}
+nav button{background:none;border:0;color:var(--muted);font-size:11px;padding:5px 3px;min-width:58px}nav button.active{color:var(--gold)}nav span{display:block;font-size:20px;margin-bottom:2px}
+h2{font-size:20px;margin:8px 0 14px}.muted{color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}.metric{font-size:23px;font-weight:750;color:var(--gold);margin-top:5px}.metric-label{font-size:12px;color:var(--muted)}
+button,.btn{cursor:pointer;border:1px solid var(--line);border-radius:11px;padding:11px 14px;background:var(--panel2);color:var(--text);font-weight:650}.primary{background:var(--gold);border-color:var(--gold);color:#182018}.danger{color:#ffd8d4;border-color:#75443f}.wide{width:100%}.actions{display:flex;gap:8px;flex-wrap:wrap}
+label{display:block;font-size:13px;color:var(--muted);margin:12px 0 5px}input,textarea,select{width:100%;border:1px solid var(--line);border-radius:10px;background:#0e1b15;color:var(--text);padding:12px;font:inherit}textarea{min-height:70px}
+.row{display:flex;justify-content:space-between;gap:10px;align-items:center}.result{font-size:25px;color:var(--gold);font-weight:800}.pill{font-size:11px;border:1px solid var(--line);padding:4px 8px;border-radius:99px;color:var(--green)}
+.item{padding:12px 0;border-bottom:1px solid var(--line)}.item:last-child{border:0}.item strong{display:block}.item small{color:var(--muted)}.empty{color:var(--muted);padding:18px;text-align:center}
+section[hidden]{display:none!important}.hint{font-size:12px;color:var(--muted);line-height:1.5}.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:380px){.grid{grid-template-columns:1fr 1fr}.metric{font-size:19px}}
+</style>
+</head>
+<body>
+<header><div class="brand"><div class="logo">SL</div><div><h1>SANDINO LOGÍSTICA</h1><small>Gestión de entregas · Operación offline</small></div></div></header>
+<main>
+<section id="home">
+<h2>Panel de control</h2>
+<div class="grid">
+<div class="card"><div class="metric-label">Entregas registradas</div><div class="metric" id="mTrips">0</div></div>
+<div class="card"><div class="metric-label">Ingresos de hoy</div><div class="metric" id="mIncome">Gs. 0</div></div>
+<div class="card"><div class="metric-label">Gastos de hoy</div><div class="metric" id="mExpenses">Gs. 0</div></div>
+<div class="card"><div class="metric-label">Resultado de hoy</div><div class="metric" id="mNet">Gs. 0</div></div>
+</div>
+<div class="card"><div class="row"><strong>Comparador Bolt</strong><span class="pill">Descuento 5 %</span></div>
+<label>Precio mostrado por Bolt (Gs.)</label><input id="boltCalc" type="number" min="0" inputmode="numeric" placeholder="Ej.: 25000">
+<div class="two"><div><div class="metric-label">Descuento</div><div class="metric" id="discountCalc">Gs. 0</div></div><div><div class="metric-label">Precio Sandino</div><div class="result" id="sandinoCalc">Gs. 0</div></div></div>
+<p class="hint">Fórmula: precio Bolt × 0,95. El descuento es comercial y no una comisión.</p></div>
+<div class="actions"><button class="primary" onclick="show('delivery')">＋ Nueva entrega</button><button onclick="show('expense')">＋ Registrar gasto</button></div>
+</section>
+
+<section id="delivery" hidden>
+<h2>Nueva entrega</h2>
+<div class="card">
+<label>Cliente</label><input id="dClient" placeholder="Nombre del cliente">
+<label>Teléfono</label><input id="dPhone" type="tel" placeholder="Número de contacto">
+<label>Origen</label><input id="dOrigin" placeholder="Punto de retiro">
+<label>Destino</label><input id="dDestination" placeholder="Punto de entrega">
+<label>Detalle</label><textarea id="dDetail" placeholder="Descripción del pedido o servicio"></textarea>
+<label>Precio mostrado por Bolt (Gs.)</label><input id="dBolt" type="number" min="1" inputmode="numeric" placeholder="Ej.: 25000">
+<div class="card" style="margin:12px 0;background:#0e1b15"><div class="row"><span class="muted">Descuento 5 %</span><strong id="dDiscount">Gs. 0</strong></div><div class="row"><span class="muted">Cobrar al cliente</span><strong class="result" id="dFinal">Gs. 0</strong></div></div>
+<button class="primary wide" onclick="saveDelivery()">Guardar entrega</button>
+</div></section>
+
+<section id="customers" hidden><h2>Clientes</h2><div class="card">
+<label>Nombre</label><input id="cName" placeholder="Nombre completo"><label>Teléfono</label><input id="cPhone" type="tel" placeholder="Teléfono">
+<button class="primary wide" style="margin-top:14px" onclick="saveCustomer()">Guardar cliente</button></div><div class="card"><strong>Directorio</strong><div id="customerList"></div></div></section>
+
+<section id="expense" hidden><h2>Registrar gasto</h2><div class="card">
+<label>Concepto</label><input id="eConcept" placeholder="Combustible, mantenimiento...">
+<label>Monto (Gs.)</label><input id="eAmount" type="number" min="1" inputmode="numeric" placeholder="Ej.: 30000">
+<label>Fecha</label><input id="eDate" type="date">
+<button class="primary wide" style="margin-top:14px" onclick="saveExpense()">Guardar gasto</button></div><div class="card"><strong>Gastos recientes</strong><div id="expenseList"></div></div></section>
+
+<section id="history" hidden><h2>Historial de entregas</h2><div class="card"><div id="deliveryList"></div></div><div class="card"><strong>Exportar información</strong><p class="hint">Descarga un archivo CSV con entregas, clientes y gastos.</p><button class="primary wide" onclick="exportCSV()">Exportar CSV</button></div></section>
+
+<section id="cash" hidden><h2>Cierre diario de caja</h2><div class="card"><label>Fecha del cierre</label><input id="cashDate" type="date"><div class="item"><div class="row"><span>Ingresos por entregas</span><strong id="cashIncome">Gs. 0</strong></div></div><div class="item"><div class="row"><span>Gastos registrados</span><strong id="cashExpenses">Gs. 0</strong></div></div><div class="item"><div class="row"><strong>Saldo del día</strong><strong class="result" id="cashNet">Gs. 0</strong></div></div><p class="hint">El cierre se calcula con las operaciones guardadas para la fecha seleccionada.</p><button class="primary wide" onclick="refreshCash()">Actualizar cierre</button></div></section>
+
+<section id="settings" hidden><h2>Configuración</h2><div class="card"><label>Descuento sobre tarifa Bolt (%)</label><input id="discountSetting" type="number" min="0" max="50" step="0.5" value="5"><button class="primary wide" style="margin-top:12px" onclick="saveSettings()">Guardar configuración</button><p class="hint">El valor inicial es 5 %. Se aplica al precio mostrado por Bolt.</p></div><div class="card"><strong>Respaldo de datos</strong><p class="hint">Tus registros se guardan en el almacenamiento local de este navegador. Exportá CSV periódicamente y no borres los datos del sitio si querés conservarlos.</p><button class="danger wide" onclick="clearAll()">Borrar todos los datos</button></div><p class="hint">Sandino Logística Web · Versión 1.0 · Diseñada para uso personal/operativo.</p></section>
+</main>
+<nav>
+<button class="active" data-tab="home" onclick="show('home')"><span>⌂</span>Inicio</button>
+<button data-tab="delivery" onclick="show('delivery')"><span>＋</span>Entrega</button>
+<button data-tab="customers" onclick="show('customers')"><span>♙</span>Clientes</button>
+<button data-tab="history" onclick="show('history')"><span>▤</span>Historial</button>
+<button data-tab="cash" onclick="show('cash')"><span>＄</span>Caja</button>
+<button data-tab="settings" onclick="show('settings')"><span>⚙</span>Más</button>
+</nav>
+<script>
+const KEY='sandino_logistica_web_v1';
+let db=JSON.parse(localStorage.getItem(KEY)||'{"deliveries":[],"customers":[],"expenses":[],"discount":5}');
+const $=id=>document.getElementById(id);
+const money=n=>'Gs. '+Math.round(Number(n)||0).toLocaleString('es-PY');
+const today=()=>new Date().toLocaleDateString('en-CA');
+function persist(){localStorage.setItem(KEY,JSON.stringify(db));render()}
+function price(b){return Math.max(0,Math.round((Number(b)||0)*(1-(Number(db.discount)||0)/100)))}
+function show(id){document.querySelectorAll('main section').forEach(s=>s.hidden=s.id!==id);document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===id));if(id==='cash')refreshCash();if(id==='history')renderHistory();if(id==='customers')renderCustomers();if(id==='expense')renderExpenses();if(id==='home')render()}
+function calcBolt(){let b=Number($('boltCalc').value)||0;$('discountCalc').textContent=money(b-price(b));$('sandinoCalc').textContent=money(price(b))}
+$('boltCalc').addEventListener('input',calcBolt);
+$('dBolt').addEventListener('input',()=>{let b=Number($('dBolt').value)||0;$('dDiscount').textContent=money(b-price(b));$('dFinal').textContent=money(price(b))});
+function saveDelivery(){let bolt=Number($('dBolt').value);if(!bolt||bolt<1){alert('Ingresá un precio Bolt válido.');return}let item={id:Date.now(),date:today(),time:new Date().toLocaleTimeString('es-PY'),client:$('dClient').value.trim(),phone:$('dPhone').value.trim(),origin:$('dOrigin').value.trim(),destination:$('dDestination').value.trim(),detail:$('dDetail').value.trim(),bolt,discount:bolt-price(bolt),final:price(bolt)};db.deliveries.unshift(item);persist();['dClient','dPhone','dOrigin','dDestination','dDetail','dBolt'].forEach(x=>$(x).value='');$('dDiscount').textContent=money(0);$('dFinal').textContent=money(0);alert('Entrega guardada correctamente.');show('history')}
+function saveCustomer(){let name=$('cName').value.trim();if(!name){alert('Ingresá el nombre del cliente.');return}db.customers.unshift({id:Date.now(),name,phone:$('cPhone').value.trim()});persist();$('cName').value='';$('cPhone').value='';renderCustomers();alert('Cliente guardado.')}
+function saveExpense(){let concept=$('eConcept').value.trim(),amount=Number($('eAmount').value),date=$('eDate').value||today();if(!concept||!amount||amount<1){alert('Completá el concepto y un monto válido.');return}db.expenses.unshift({id:Date.now(),concept,amount,date});persist();$('eConcept').value='';$('eAmount').value='';renderExpenses();alert('Gasto guardado.')}
+function dayTotals(date){let income=db.deliveries.filter(x=>x.date===date).reduce((s,x)=>s+x.final,0),expenses=db.expenses.filter(x=>x.date===date).reduce((s,x)=>s+x.amount,0);return{income,expenses,net:income-expenses}}
+function render(){let t=dayTotals(today());$('mTrips').textContent=db.deliveries.length;$('mIncome').textContent=money(t.income);$('mExpenses').textContent=money(t.expenses);$('mNet').textContent=money(t.net)}
+function renderHistory(){$('deliveryList').innerHTML=db.deliveries.length?db.deliveries.map(x=>`<div class="item"><div class="row"><strong>${esc(x.client||'Cliente no especificado')}</strong><span class="pill">${esc(x.date)}</span></div><small>${esc(x.origin)} → ${esc(x.destination)}</small><div class="row"><small>Bolt: ${money(x.bolt)} · Descuento: ${money(x.discount)}</small><strong>${money(x.final)}</strong></div><button class="danger" style="margin-top:8px" onclick="deleteRecord('deliveries',${x.id})">Eliminar</button></div>`).join(''):'<div class="empty">Todavía no hay entregas registradas.</div>'}
+function renderCustomers(){$('customerList').innerHTML=db.customers.length?db.customers.map(x=>`<div class="item"><strong>${esc(x.name)}</strong><small>${esc(x.phone||'Sin teléfono')}</small></div>`).join(''):'<div class="empty">No hay clientes guardados.</div>'}
+function renderExpenses(){$('expenseList').innerHTML=db.expenses.length?db.expenses.slice(0,30).map(x=>`<div class="item"><div class="row"><strong>${esc(x.concept)}</strong><strong>${money(x.amount)}</strong></div><small>${esc(x.date)}</small></div>`).join(''):'<div class="empty">No hay gastos registrados.</div>'}
+function refreshCash(){let d=$('cashDate');if(!d.value)d.value=today();let t=dayTotals(d.value);$('cashIncome').textContent=money(t.income);$('cashExpenses').textContent=money(t.expenses);$('cashNet').textContent=money(t.net)}
+function saveSettings(){let v=Number($('discountSetting').value);if(!Number.isFinite(v)||v<0||v>50){alert('Usá un descuento entre 0 y 50 %.');return}db.discount=v;persist();calcBolt();alert('Configuración guardada.')}
+function deleteRecord(type,id){if(confirm('¿Eliminar este registro?')){db[type]=db[type].filter(x=>x.id!==id);persist();renderHistory();renderExpenses()}}
+function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function exportCSV(){let rows=[['TIPO','FECHA','CLIENTE/CONCEPTO','TELEFONO','ORIGEN','DESTINO','BOLT','DESCUENTO','IMPORTE']];db.deliveries.forEach(x=>rows.push(['ENTREGA',x.date,x.client,x.phone,x.origin,x.destination,x.bolt,x.discount,x.final]));db.expenses.forEach(x=>rows.push(['GASTO',x.date,x.concept,'','','','', '',x.amount]));db.customers.forEach(x=>rows.push(['CLIENTE','',x.name,x.phone,'','','','','']));let csv='\ufeff'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');let a=document.createElement('a'),u=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.href=u;a.download='sandino-logistica-'+today()+'.csv';a.click();URL.revokeObjectURL(u)}
+function clearAll(){if(confirm('Esto borrará todos los clientes, entregas y gastos guardados en este navegador. ¿Continuar?')){db={deliveries:[],customers:[],expenses:[],discount:5};persist();$('discountSetting').value=5;alert('Datos eliminados.')}}
+$('cashDate').value=today();$('eDate').value=today();$('discountSetting').value=db.discount;render();calcBolt();
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}))}
+</script>
+</body></html>
